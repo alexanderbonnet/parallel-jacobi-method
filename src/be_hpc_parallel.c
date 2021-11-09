@@ -38,25 +38,33 @@ int solve_with_jacobi(ELEMENT *x_old, ELEMENT *x_new, ELEMENT *a_matrix,
   return nit;
 }
 
-int main(void) {
-  // set constants for problem size and number of executions for taking the
-  // average
-  int n = 2048;
+int main(int argc, char *argv[]) {
+  int size = 0;
+  int num_threads = 0;
+
+  if (argc == 1) {
+    size = 2048;
+    num_threads = 4;
+  } else if (argc == 3) {
+    size = atoi(argv[1]);
+    num_threads = atoi(argv[2]);
+  } else {
+    printf("ERROR - need two arguments - exiting \n");
+    exit(0);
+  }
+
   int num_executions = 10;
 
   // number of iterations of the algorithm and result
   int nit = 0;
   ELEMENT result = 0;
 
-  // number of threads to use for the parallel version
-  int num_threads = 4;
-
   ELEMENT t1 = 0, t2 = 0, avg_time = 0;
   ELEMENT eps = 1e-6;
 
-  ELEMENT *x_init = init_x(n);
-  ELEMENT *a_matrix = init_a(n);
-  ELEMENT *b_vect = init_b(n);
+  ELEMENT *x_init = init_x(size);
+  ELEMENT *a_matrix = init_a(size);
+  ELEMENT *b_vect = init_b(size);
 
   ELEMENT *execution_times = malloc(sizeof(ELEMENT) * num_executions);
 
@@ -69,11 +77,11 @@ int main(void) {
   printf("Number of threads: %d\n", omp_thread_count());
 
   for (int i = 0; i < num_executions; i++) {
-    ELEMENT *x_old = copy(x_init, n);
-    ELEMENT *x_new = copy(x_init, n);
+    ELEMENT *x_old = copy(x_init, size);
+    ELEMENT *x_new = copy(x_init, size);
 
     t1 = omp_get_wtime();
-    nit = solve_with_jacobi(x_old, x_new, a_matrix, b_vect, n, eps);
+    nit = solve_with_jacobi(x_old, x_new, a_matrix, b_vect, size, eps);
     t2 = omp_get_wtime();
 
     execution_times[i] = t2 - t1;
@@ -91,7 +99,7 @@ int main(void) {
   printf("execution time = %.10fs \n", avg_time);
   printf("\n");
   printf("our result = %.10f \n", result);
-  printf("theoretical result = %.10f \n", 2.0 / n);
+  printf("theoretical result = %.10f \n", 2.0 / size);
 
   free(execution_times);
   free(a_matrix);

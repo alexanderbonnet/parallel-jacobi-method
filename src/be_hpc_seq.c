@@ -38,10 +38,19 @@ int solve_with_jacobi(ELEMENT *x_old, ELEMENT *x_new, ELEMENT *a_matrix,
   return nit;
 }
 
-int main(void) {
+int main(int argc, char *argv[]) {
+  int size = 0;
+
+  if (argc == 1) {
+    size = 2048;
+  } else if (argc == 2) {
+    size = atoi(argv[1]);
+  } else {
+    printf("ERROR - need two arguments - exiting \n");
+    exit(0);
+  }
   // set constants for problem size and number of executions for taking the
   // average
-  int size = 2048;
   int num_executions = 10;
 
   // number of iterations of the algorithm and result
@@ -71,7 +80,7 @@ int main(void) {
     t2 = omp_get_wtime();
 
     execution_times[i] = t2 - t1;
-    printf("%f \n", t2 - t1);
+    printf("exec time = %f \n", t2 - t1);
 
     result = x_new[0];
 
