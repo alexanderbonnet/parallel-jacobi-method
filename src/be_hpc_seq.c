@@ -4,7 +4,6 @@
 
 #include "copy.h"
 #include "linalg.h"
-#include "string.h"
 #include "utils.h"
 
 #define ELEMENT double
