@@ -68,7 +68,10 @@ int main(int argc, char *argv[]) {
 
   ELEMENT *execution_times = malloc(sizeof(ELEMENT) * num_executions);
 
-  printf("running parallel version of iterative Jacobi algorithm\n");
+  printf(
+      "running parallel version of iterative Jacobi algorithm with size = "
+      "%d\n",
+      size);
 
   // set number of threads for parallel execution
   omp_set_num_threads(num_threads);

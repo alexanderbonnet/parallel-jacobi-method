@@ -2,6 +2,10 @@ import subprocess
 from argparse import ArgumentParser
 from pathlib import Path
 
+CC = "gcc"
+CFLAGS = "-std=c99 -Wall -fopenmp -O3"
+UTILS = "src/utils.c src/copy.c src/linalg.c"
+
 
 def main():
     parser = ArgumentParser()
@@ -11,14 +15,27 @@ def main():
 
     ARGS = parser.parse_args()
 
+    if ARGS.num_threads < 1:
+        raise ValueError("num_threads must be striclty larger than 1!")
+
     out_path = Path("./src/bin")
     if not out_path.exists():
         out_path.mkdir(parents=True)
 
-    parallel = True if ARGS.num_threads > 1 else False
+    if ARGS.num_threads > 1:
+        compile_cmd = (
+            f"{CC} {CFLAGS} "
+            f"src/be_hpc_parallel.c {UTILS} "
+            f"-o src/bin/be_hpc_parallel.o"
+        )
+        subprocess.run(compile_cmd, shell=True)
 
-    if parallel:
-        pass
+        run_cmd = (
+            f"./src/bin/be_hpc_parallel.o "
+            f"{ARGS.problem_dimension} "
+            f"{ARGS.num_threads} "
+        )
+        subprocess.run(run_cmd, shell=True)
     else:
         pass
 

@@ -22,3 +22,6 @@ compile-run-par:
 
 clean-bin:
 	rm -rf ./src/bin/*
+
+clean-code:
+	isort . && black . && flake8 .

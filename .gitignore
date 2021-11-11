@@ -1,6 +1,9 @@
 # Compiled
 src/bin/
 
+# Cython
+*.pyc
+
 # Prerequisites
 *.d
 
