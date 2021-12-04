@@ -6,5 +6,5 @@ The C-language source code is contained is src/ and includes sequential and para
 Simple Python bindings compile and consecutively run the program with desired arguments.
 
 ```shell
-python -m python_binding.jacobi_method --num_threads (an int) --problem dimension (an int)
+python -m python_binding.jacobi_method --num_threads (an int) --problem_dimension (an int)
 ```
