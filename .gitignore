@@ -1,3 +1,6 @@
+# visual studio
+.vscode
+
 # Compiled
 src/bin/
 
