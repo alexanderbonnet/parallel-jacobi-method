@@ -4,9 +4,9 @@
 #include <sys/time.h>
 
 #define N 2048
-#define THREADS_PER_BLOCK 32
+#define THREADS_PER_BLOCK 128
 #define N_BLOCKS (N / THREADS_PER_BLOCK + 1)
-#define ELEMENT float
+#define ELEMENT double
 
 ELEMENT mean(ELEMENT *x_array, int size) {
     ELEMENT mean = 0;
@@ -39,44 +39,35 @@ ELEMENT *init_a(unsigned int size) {
     return a_matrix;
 }
 
-__device__ double atomicAdd(ELEMENT *address, ELEMENT val) {
-    unsigned long long int *address_as_ull = (unsigned long long int *)address;
-    unsigned long long int old = *address_as_ull, assumed;
-    do {
-        assumed = old;
-        old = atomicCAS(
-            address_as_ull, assumed,
-            __double_as_longlong(val + __longlong_as_double(assumed)));
-    } while (assumed != old);
-    return __longlong_as_double(old);
-}
-
 __global__ void warm_up_gpu() {
     unsigned int tid = blockIdx.x * blockDim.x + threadIdx.x;
-    float ia, ib;
+    ELEMENT ia, ib;
     ia = ib = 0.0f;
     ib += ia + tid;
 }
 
-__global__ void criterion(ELEMENT *a, ELEMENT *b, ELEMENT *c) {
+__global__ void criterion(ELEMENT *a, ELEMENT *b, ELEMENT *crit) {
     __shared__ ELEMENT temp[THREADS_PER_BLOCK];
 
-    *c = 0;
-    unsigned int index = threadIdx.x + blockIdx.x * blockDim.x;
+    *crit = 0;
+    unsigned int index = threadIdx.x;
+    ELEMENT sum = 0;
+    ELEMENT diff = 0;
+    for (unsigned int i = index; i < N; i += THREADS_PER_BLOCK) {
+        diff = a[i] - b[i];
+        sum += diff * diff;
+    }
+    temp[index] = sum;
 
-    if (index < N) {
-        ELEMENT diff = a[index] - b[index];
-        temp[threadIdx.x] = diff * diff;
-
-        __syncthreads();
-
-        if (0 == threadIdx.x) {
-            ELEMENT sum = 0;
-            for (unsigned int i = 0; i < THREADS_PER_BLOCK; i++) {
-                sum += temp[i];
-            };
-            atomicAdd(c, sum);
+    __syncthreads();
+    for (unsigned int size = THREADS_PER_BLOCK / 2; size > 0; size /= 2) {
+        if (index < size) {
+            temp[index] += temp[index + size];
         }
+        __syncthreads();
+    }
+    if (index == 0) {
+        *crit = temp[0];
     }
 }
 
@@ -120,8 +111,7 @@ unsigned int solve_with_jacobi(ELEMENT *x_init, ELEMENT *a_mat, ELEMENT *b_vec,
     while (crit > eps_2) {
         increment_x<<<N_BLOCKS, THREADS_PER_BLOCK>>>(dev_x_new, dev_x_old,
                                                      dev_a, dev_b);
-        criterion<<<N_BLOCKS, THREADS_PER_BLOCK>>>(dev_x_new, dev_x_old,
-                                                   dev_crit);
+        criterion<<<1, THREADS_PER_BLOCK>>>(dev_x_new, dev_x_old, dev_crit);
         cudaMemcpy(dev_x_old, dev_x_new, N * sizeof(ELEMENT),
                    cudaMemcpyDeviceToDevice);
         cudaMemcpy(&crit, dev_crit, sizeof(ELEMENT), cudaMemcpyDeviceToHost);
