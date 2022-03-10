@@ -2,7 +2,8 @@
 .vscode
 
 # Compiled
-src/bin/
+openmp/src/bin/
+cuda/src/bin
 
 # Cython
 *.pyc
