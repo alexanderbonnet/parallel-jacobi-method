@@ -7,9 +7,7 @@ int omp_thread_count();
 
 ELEMENT mean(ELEMENT *x_array, int size);
 
-ELEMENT *init_x(int size);
-
-ELEMENT *init_b(int size);
+ELEMENT *init_x(int size, ELEMENT value);
 
 ELEMENT *init_a(int size);
 
