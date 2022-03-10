@@ -8,13 +8,6 @@
 #define N_BLOCKS (N / THREADS_PER_BLOCK + 1)
 #define ELEMENT float
 
-__global__ void warm_up_gpu() {
-    unsigned int tid = blockIdx.x * blockDim.x + threadIdx.x;
-    float ia, ib;
-    ia = ib = 0.0f;
-    ib += ia + tid;
-}
-
 ELEMENT mean(ELEMENT *x_array, int size) {
     ELEMENT mean = 0;
     for (unsigned int i = 0; i < size; i++) {
@@ -46,10 +39,23 @@ ELEMENT *init_a(unsigned int size) {
     return a_matrix;
 }
 
-void swap_pointers(ELEMENT **a, ELEMENT **b) {
-    ELEMENT *temp = *a;
-    *a = *b;
-    *b = temp;
+__device__ double atomicAdd(ELEMENT *address, ELEMENT val) {
+    unsigned long long int *address_as_ull = (unsigned long long int *)address;
+    unsigned long long int old = *address_as_ull, assumed;
+    do {
+        assumed = old;
+        old = atomicCAS(
+            address_as_ull, assumed,
+            __double_as_longlong(val + __longlong_as_double(assumed)));
+    } while (assumed != old);
+    return __longlong_as_double(old);
+}
+
+__global__ void warm_up_gpu() {
+    unsigned int tid = blockIdx.x * blockDim.x + threadIdx.x;
+    float ia, ib;
+    ia = ib = 0.0f;
+    ib += ia + tid;
 }
 
 __global__ void criterion(ELEMENT *a, ELEMENT *b, ELEMENT *c) {
@@ -112,16 +118,14 @@ unsigned int solve_with_jacobi(ELEMENT *x_init, ELEMENT *a_mat, ELEMENT *b_vec,
     cudaMemcpy(dev_crit, &crit, sizeof(ELEMENT), cudaMemcpyHostToDevice);
 
     while (crit > eps_2) {
-        swap_pointers(&dev_x_old, &dev_x_new);
         increment_x<<<N_BLOCKS, THREADS_PER_BLOCK>>>(dev_x_new, dev_x_old,
                                                      dev_a, dev_b);
         criterion<<<N_BLOCKS, THREADS_PER_BLOCK>>>(dev_x_new, dev_x_old,
                                                    dev_crit);
+        cudaMemcpy(dev_x_old, dev_x_new, size * sizeof(ELEMENT),
+                   cudaMemcpyDeviceToDevice);
         cudaMemcpy(&crit, dev_crit, sizeof(ELEMENT), cudaMemcpyDeviceToHost);
         nit += 1;
-        if (nit > max_iters) {
-            crit = 0.0;
-        }
     }
     cudaMemcpy(x_init, dev_x_new, N * sizeof(ELEMENT), cudaMemcpyDeviceToHost);
 
@@ -136,7 +140,6 @@ unsigned int solve_with_jacobi(ELEMENT *x_init, ELEMENT *a_mat, ELEMENT *b_vec,
 
 int main(int argc, char *argv[]) {
     unsigned int num_executions = 20;
-    unsigned int max_iters = 1000;
 
     unsigned int nit = 0;
     ELEMENT result = 0;
@@ -166,7 +169,7 @@ int main(int argc, char *argv[]) {
 
         gettimeofday(&t1, 0);
 
-        nit = solve_with_jacobi(x_solve, a_mat, b_vec, eps, max_iters);
+        nit = solve_with_jacobi(x_solve, a_mat, b_vec, eps);
 
         cudaDeviceSynchronize();
         gettimeofday(&t2, 0);
