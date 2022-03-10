@@ -1,21 +1,15 @@
 #include <omp.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 
-#include "copy.h"
 #include "linalg.h"
 #include "utils.h"
 
 #define ELEMENT double
 
-void swap_pointers(ELEMENT **board, ELEMENT **new_board) {
-    ELEMENT *temp = *board;
-    *board = *new_board;
-    *new_board = temp;
-}
-
-void increment_x_inplace(ELEMENT *x_vect, ELEMENT *x_tmp, ELEMENT *a_matrix,
-                         ELEMENT *b_vect, int size) {
+void increment_x(ELEMENT *x_vect, ELEMENT *x_tmp, ELEMENT *a_matrix,
+                 ELEMENT *b_vect, int size) {
 #pragma omp parallel for shared(size, a_matrix, x_tmp, x_vect, \
                                 b_vect) default(none)
     for (int i = 0; i < size; i++) {
@@ -29,18 +23,19 @@ void increment_x_inplace(ELEMENT *x_vect, ELEMENT *x_tmp, ELEMENT *a_matrix,
     }
 }
 
-int solve_with_jacobi(ELEMENT *x_old, ELEMENT *x_new, ELEMENT *a_matrix,
+int solve_with_jacobi(ELEMENT *x_new, ELEMENT *x_old, ELEMENT *a_matrix,
                       ELEMENT *b_vect, int size, ELEMENT epsilon) {
     int nit = 0;
     ELEMENT eps_2 = epsilon * epsilon;
     ELEMENT crit = eps_2 + 1;
 
     while (crit > eps_2) {
-        increment_x_inplace(x_new, x_old, a_matrix, b_vect, size);
+        increment_x(x_new, x_old, a_matrix, b_vect, size);
         crit = squared_norm_of_diff_parallel(x_new, x_old, size);
-        copy_inplace_parallel(x_new, x_old, size);
+        memcpy(x_old, x_new, size * sizeof(ELEMENT));
         nit += 1;
     }
+
     return nit;
 }
 
@@ -59,7 +54,7 @@ int main(int argc, char *argv[]) {
         exit(0);
     }
 
-    int num_executions = 10;
+    int num_executions = 1;
 
     // number of iterations of the algorithm and result
     int nit = 0;
@@ -86,11 +81,14 @@ int main(int argc, char *argv[]) {
     printf("Number of threads: %d\n", omp_thread_count());
 
     for (int i = 0; i < num_executions; i++) {
-        ELEMENT *x_old = copy(x_init, size);
-        ELEMENT *x_new = copy(x_init, size);
+        ELEMENT *x_old = malloc(size * sizeof(ELEMENT));
+        ELEMENT *x_new = malloc(size * sizeof(ELEMENT));
+
+        memcpy(x_old, x_init, size * sizeof(ELEMENT));
+        memcpy(x_new, x_init, size * sizeof(ELEMENT));
 
         t1 = omp_get_wtime();
-        nit = solve_with_jacobi(x_old, x_new, a_matrix, b_vect, size, eps);
+        nit = solve_with_jacobi(x_new, x_old, a_matrix, b_vect, size, eps);
         t2 = omp_get_wtime();
 
         execution_times[i] = t2 - t1;

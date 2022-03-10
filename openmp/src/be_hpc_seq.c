@@ -1,15 +1,15 @@
 #include <omp.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 
-#include "copy.h"
 #include "linalg.h"
 #include "utils.h"
 
 #define ELEMENT double
 
-void increment_x_inplace(ELEMENT *x_vect, ELEMENT *x_tmp, ELEMENT *a_matrix,
-                         ELEMENT *b_vect, int size) {
+void increment_x(ELEMENT *x_vect, ELEMENT *x_tmp, ELEMENT *a_matrix,
+                 ELEMENT *b_vect, int size) {
     ELEMENT sum = 0;
     for (int i = 0; i < size; i++) {
         sum = 0;
@@ -26,12 +26,12 @@ int solve_with_jacobi(ELEMENT *x_old, ELEMENT *x_new, ELEMENT *a_matrix,
                       ELEMENT *b_vect, int size, ELEMENT epsilon) {
     int nit = 0;
     ELEMENT eps_2 = epsilon * epsilon;
-    ELEMENT diff_norm2 = eps_2 + 1;
+    ELEMENT crit = eps_2 + 1;
 
-    while (diff_norm2 > eps_2) {
-        increment_x_inplace(x_new, x_old, a_matrix, b_vect, size);
-        diff_norm2 = squared_norm_of_diff(x_new, x_old, size);
-        copy_inplace(x_new, x_old, size);
+    while (crit > eps_2) {
+        increment_x(x_new, x_old, a_matrix, b_vect, size);
+        crit = squared_norm_of_diff(x_new, x_old, size);
+        memcpy(x_old, x_new, size * sizeof(ELEMENT));
         nit += 1;
     }
     return nit;
@@ -71,8 +71,11 @@ int main(int argc, char *argv[]) {
         size);
 
     for (int i = 0; i < num_executions; i++) {
-        ELEMENT *x_old = copy(x_init, size);
-        ELEMENT *x_new = copy(x_init, size);
+        ELEMENT *x_old = malloc(size * sizeof(ELEMENT));
+        ELEMENT *x_new = malloc(size * sizeof(ELEMENT));
+
+        memcpy(x_old, x_init, size * sizeof(ELEMENT));
+        memcpy(x_new, x_init, size * sizeof(ELEMENT));
 
         t1 = omp_get_wtime();
         nit = solve_with_jacobi(x_old, x_new, a_matrix, b_vect, size, eps);
