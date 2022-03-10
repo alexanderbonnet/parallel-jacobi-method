@@ -3,6 +3,7 @@
 
 #define ELEMENT double
 
+// TODO: remove copy
 ELEMENT *copy(ELEMENT *vect, int size);
 
 ELEMENT *copy_parallel(ELEMENT *vect, int size);
