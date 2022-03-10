@@ -97,7 +97,7 @@ __global__ void increment_x(ELEMENT *x_new, ELEMENT *x_old, ELEMENT *a_mat,
 }
 
 unsigned int solve_with_jacobi(ELEMENT *x_init, ELEMENT *a_mat, ELEMENT *b_vec,
-                               ELEMENT epsilon, unsigned int max_iters) {
+                               ELEMENT epsilon) {
     unsigned int nit = 0;
     ELEMENT eps_2 = epsilon * epsilon;
     ELEMENT crit = eps_2 + 1;
@@ -122,7 +122,7 @@ unsigned int solve_with_jacobi(ELEMENT *x_init, ELEMENT *a_mat, ELEMENT *b_vec,
                                                      dev_a, dev_b);
         criterion<<<N_BLOCKS, THREADS_PER_BLOCK>>>(dev_x_new, dev_x_old,
                                                    dev_crit);
-        cudaMemcpy(dev_x_old, dev_x_new, size * sizeof(ELEMENT),
+        cudaMemcpy(dev_x_old, dev_x_new, N * sizeof(ELEMENT),
                    cudaMemcpyDeviceToDevice);
         cudaMemcpy(&crit, dev_crit, sizeof(ELEMENT), cudaMemcpyDeviceToHost);
         nit += 1;
