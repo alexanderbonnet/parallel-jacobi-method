@@ -5,6 +5,9 @@
 openmp/src/bin/*
 cuda/src/bin/*
 
+!openmp/src/bin/placeholder.txt
+!cuda/src/bin/placeholder.txt
+
 # Cython
 *.pyc
 
