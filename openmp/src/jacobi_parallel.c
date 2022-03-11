@@ -54,7 +54,7 @@ int main(int argc, char *argv[]) {
 
     if (argc == 1) {
         size = 2048;
-        num_threads = 4;
+        num_threads = 32;
     } else if (argc == 3) {
         size = atoi(argv[1]);
         num_threads = atoi(argv[2]);
