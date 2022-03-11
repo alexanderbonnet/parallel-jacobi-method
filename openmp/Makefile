@@ -4,16 +4,16 @@ UTILS = src/utils.c
 INCLUDE = include
 
 compile-seq:
-	${CC} ${CFLAGS} src/be_hpc_seq.c ${UTILS} -I ${INCLUDE} -o src/bin/be_hpc_seq.o
+	${CC} ${CFLAGS} src/jacobi_seq.c ${UTILS} -I ${INCLUDE} -o src/bin/jacobi_seq.o
 
 run-seq:
-	./src/bin/be_hpc_seq.o
+	./src/bin/jacobi_seq.o
 
 compile-par:
-	${CC} ${CFLAGS} src/be_hpc_parallel.c ${UTILS} -I ${INCLUDE} -o src/bin/be_hpc_parallel.o
+	${CC} ${CFLAGS} src/jacobi_parallel.c ${UTILS} -I ${INCLUDE} -o src/bin/jacobi_parallel.o
 
 run-par:
-	./src/bin/be_hpc_parallel.o
+	./src/bin/jacobi_parallel.o
 
 clean-bin:
 	rm -rf ./src/bin/*
