@@ -1,6 +1,8 @@
 # visual studio
 .vscode
 
+*.ipynb*
+
 # Compiled
 openmp/src/bin/*
 cuda/src/bin/*
