@@ -3,10 +3,19 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "linalg.h"
 #include "utils.h"
 
 #define ELEMENT double
+
+ELEMENT criterion(ELEMENT *vect_a, ELEMENT *vect_b, int size) {
+    ELEMENT sum = 0;
+#pragma omp parallel for shared(vect_a, vect_b, size) default(none) reduction(+: sum)
+    for (int i = 0; i < size; i++) {
+        ELEMENT tmp = vect_a[i] - vect_b[i];
+        sum += tmp * tmp;
+    }
+    return sum;
+}
 
 void increment_x(ELEMENT *x_vect, ELEMENT *x_tmp, ELEMENT *a_matrix,
                  ELEMENT *b_vect, int size) {
@@ -31,7 +40,7 @@ int solve_with_jacobi(ELEMENT *x_new, ELEMENT *x_old, ELEMENT *a_matrix,
 
     while (crit > eps_2) {
         increment_x(x_new, x_old, a_matrix, b_vect, size);
-        crit = squared_norm_of_diff_parallel(x_new, x_old, size);
+        crit = criterion(x_new, x_old, size);
         memcpy(x_old, x_new, size * sizeof(ELEMENT));
         nit += 1;
     }
@@ -54,7 +63,7 @@ int main(int argc, char *argv[]) {
         exit(0);
     }
 
-    int num_executions = 1;
+    int num_executions = 20;
 
     // number of iterations of the algorithm and result
     int nit = 0;

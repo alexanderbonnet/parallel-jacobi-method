@@ -4,7 +4,7 @@ from pathlib import Path
 
 CC = "gcc"
 CFLAGS = "-std=c99 -Wall -fopenmp -O3"
-UTILS = "src/utils.c src/copy.c src/linalg.c"
+UTILS = "src/utils.c"
 INCLUDE = "include"
 
 
