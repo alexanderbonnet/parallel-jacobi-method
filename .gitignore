@@ -2,6 +2,7 @@
 .vscode
 
 *.ipynb*
+*.png
 
 # Compiled
 openmp/src/bin/*
