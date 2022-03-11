@@ -4,7 +4,7 @@
 #include <sys/time.h>
 
 #define N 2048
-#define THREADS_PER_BLOCK 128
+#define THREADS_PER_BLOCK 32
 #define N_BLOCKS (N / THREADS_PER_BLOCK + 1)
 #define ELEMENT double
 
